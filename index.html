@@ -43,9 +43,12 @@
     td { padding: 0.75rem; border-bottom: 1px solid #eee; }
     tr:hover { background: #f9f9f9; }
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .summary-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; }
-    .summary-label { font-size: 12px; color: #999; margin-bottom: 0.5rem; }
-    .summary-value { font-size: 24px; font-weight: 600; color: #ec4899; }
+    .summary-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; display: flex; flex-direction: column; }
+    .summary-label { font-size: 12px; color: #999; margin-bottom: 0.5rem; min-height: 2.4em; display: flex; align-items: center; justify-content: center; }
+    .summary-value { font-size: 24px; font-weight: 600; color: #ec4899; margin-top: auto; }
+    .invoer-inline { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1rem; }
+    .invoer-inline .form-group { margin-bottom: 0; }
+    .invoer-inline input { width: 120px; }
     .chart-container { position: relative; height: 300px; margin-bottom: 2rem; }
     .date-selector { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
     .date-selector label { margin: 0; margin-left: 0.5rem; }
@@ -170,8 +173,6 @@
     <div class="date-selector">
       <label>Datum:</label>
       <input type="date" id="spoelen-datum">
-      <label>Tijdstip:</label>
-      <input type="time" id="spoelen-tijdstip">
       <button onclick="app.loadSpoelen()">Vernieuwen</button>
     </div>
 
@@ -180,7 +181,11 @@
 
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Spoel moment toevoegen</h2>
-      <div class="grid-2">
+      <div class="invoer-inline">
+        <div class="form-group">
+          <label>Tijdstip</label>
+          <input type="time" id="spoelen-tijdstip">
+        </div>
         <div class="form-group">
           <label>Instroom (ml)</label>
           <input type="number" id="spoelen-instroom" min="0">
@@ -498,21 +503,38 @@ const app = {
       let spoelen = result.spoelen || [];
       spoelen.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
       this.spoelenData = spoelen;
+
+      // Laatste spoelmoment van de voorgaande dag ophalen (voor tussentijd eerste waarde)
+      let vorigeDagLaatste = null;
+      const vorigeDatum = this.datumMinusEen(datum);
+      try {
+        const prevResp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum: vorigeDatum }) });
+        const prevResult = await prevResp.json();
+        let prevSpoelen = prevResult.spoelen || [];
+        prevSpoelen.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
+        if (prevSpoelen.length > 0) {
+          const last = prevSpoelen[prevSpoelen.length - 1];
+          vorigeDagLaatste = { datum: vorigeDatum, tijdstip: last.tijdstip };
+        }
+      } catch (e) { /* vorige dag optioneel */ }
+
       const tbody = document.getElementById('spoelen-list');
       tbody.innerHTML = '';
       const tussentijden = [];
       spoelen.forEach((s, idx) => {
         let tussentijd = '';
+        let prevMoment = null;
         if (idx > 0) {
-          const prev = spoelen[idx - 1];
-          const prevTime = new Date(`2000-01-01 ${prev.tijdstip}`);
-          const currTime = new Date(`2000-01-01 ${s.tijdstip}`);
-          const diffMs = currTime - prevTime;
-          const diffMinutes = Math.round(diffMs / (1000 * 60));
+          prevMoment = { datum: datum, tijdstip: spoelen[idx - 1].tijdstip };
+        } else if (vorigeDagLaatste) {
+          prevMoment = vorigeDagLaatste;
+        }
+        if (prevMoment) {
+          const prevDateTime = new Date(`${prevMoment.datum}T${prevMoment.tijdstip}`);
+          const currDateTime = new Date(`${datum}T${s.tijdstip}`);
+          const diffMinutes = Math.round((currDateTime - prevDateTime) / (1000 * 60));
           tussentijden.push(diffMinutes);
-          const h = Math.floor(diffMinutes / 60);
-          const m = diffMinutes % 60;
-          tussentijd = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+          tussentijd = this.minutenNaarTijd(diffMinutes);
         }
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${s.tijdstip}</td><td>${s.instroom}</td><td>${s.uitstroom}</td><td>${Math.round(s.netto_uitstroom)}</td><td>${Math.round(s.werkelijke_uitstroom)}</td><td>${tussentijd}</td>` + rowActions(`app.editSpoel(${s.rowIndex})`, `app.deleteSpoel(${s.rowIndex})`);
@@ -520,6 +542,14 @@ const app = {
       });
       this.renderSpoelenTotals(spoelen, tussentijden);
     } catch (e) { console.error('Load spoelen error:', e); }
+  },
+  datumMinusEen(datum) {
+    const d = new Date(`${datum}T00:00:00`);
+    d.setDate(d.getDate() - 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   },
   minutenNaarTijd(min) {
     const h = Math.floor(min / 60);
