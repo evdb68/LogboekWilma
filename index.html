@@ -25,7 +25,17 @@
     button:hover { background: #db2777; }
     button.danger { background: #dc2626; }
     button.danger:hover { background: #b91c1c; }
+    button.secondary { background: #9ca3af; margin-left: 0.5rem; }
+    button.secondary:hover { background: #6b7280; }
+    .row-actions { white-space: nowrap; text-align: right; }
+    .icon-btn { background: none; border: 1px solid #ddd; border-radius: 6px; padding: 0; width: 30px; height: 30px; margin-left: 0.25rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .icon-btn svg { width: 15px; height: 15px; }
+    .icon-btn.edit { color: #ec4899; }
+    .icon-btn.edit:hover { background: #fce7f3; border-color: #ec4899; }
+    .icon-btn.delete { color: #dc2626; }
+    .icon-btn.delete:hover { background: #fee2e2; border-color: #dc2626; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; max-width: 360px; }
     @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
     .table-scroll { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -58,7 +68,6 @@
     <button class="tab-btn active" data-tab="eetdrink">Eten/Drinken</button>
     <button class="tab-btn" data-tab="favorieten">Favorieten</button>
     <button class="tab-btn" data-tab="spoelen">Spoelen</button>
-    <button class="tab-btn" data-tab="overzicht">Dag-overzicht</button>
     <button class="tab-btn" data-tab="analyse">Analyse</button>
   </div>
 
@@ -102,7 +111,8 @@
           <input type="number" id="eetdrink-vocht" min="0" value="0">
         </div>
       </div>
-      <button onclick="app.addEetDrink()">Moment toevoegen</button>
+      <button id="eetdrink-submit" onclick="app.addEetDrink()">Moment toevoegen</button>
+      <button id="eetdrink-cancel" class="secondary" style="display:none;" onclick="app.cancelEditEetDrink()">Annuleer</button>
     </div>
 
     <div class="card">
@@ -120,10 +130,14 @@
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Favorieten toevoegen/bewerken</h2>
       <div class="form-group">
-        <label>Item naam</label>
+        <label>Naam</label>
         <input type="text" id="fav-item" placeholder="Bijv. kopje thee">
       </div>
-      <div class="grid-2">
+      <div class="form-group">
+        <label>Categorie</label>
+        <input type="text" id="fav-categorie" placeholder="Bijv. drinken">
+      </div>
+      <div class="grid-3">
         <div class="form-group">
           <label>Eiwit (g)</label>
           <input type="number" id="fav-eiwit" min="0" value="0">
@@ -136,19 +150,16 @@
           <label>Vocht (ml)</label>
           <input type="number" id="fav-vocht" min="0" value="0">
         </div>
-        <div class="form-group">
-          <label>Categorie</label>
-          <input type="text" id="fav-categorie" placeholder="Bijv. drinken">
-        </div>
       </div>
-      <button onclick="app.addFavoriet()">Favoriet toevoegen</button>
+      <button id="fav-submit" onclick="app.addFavoriet()">Favoriet toevoegen</button>
+      <button id="fav-cancel" class="secondary" style="display:none;" onclick="app.cancelEditFavoriet()">Annuleer</button>
     </div>
 
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Mijn favorieten</h2>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Item</th><th>Eiwit</th><th>Kcal</th><th>Vocht</th><th>Categorie</th><th></th></tr></thead>
+          <thead><tr><th>Naam</th><th>Categorie</th><th>Eiwit</th><th>Kcal</th><th>Vocht</th><th></th></tr></thead>
           <tbody id="favorieten-list"></tbody>
         </table>
       </div>
@@ -163,6 +174,10 @@
       <input type="time" id="spoelen-tijdstip">
       <button onclick="app.loadSpoelen()">Vernieuwen</button>
     </div>
+
+    <h2 style="margin-bottom: 1rem;">Dagtotaal</h2>
+    <div class="summary-grid" id="spoelen-totals"></div>
+
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Spoel moment toevoegen</h2>
       <div class="grid-2">
@@ -175,34 +190,17 @@
           <input type="number" id="spoelen-uitstroom" min="0">
         </div>
       </div>
-      <button onclick="app.addSpoel()">Spoel moment toevoegen</button>
+      <button id="spoelen-submit" onclick="app.addSpoel()">Spoel moment toevoegen</button>
+      <button id="spoelen-cancel" class="secondary" style="display:none;" onclick="app.cancelEditSpoel()">Annuleer</button>
     </div>
     <div class="card">
-      <h2 style="margin-bottom: 1rem;">Spoelmomenten vandaag</h2>
+      <h2 style="margin-bottom: 1rem;">Details gesorteerd op tijdstip</h2>
       <div class="table-scroll">
         <table>
           <thead><tr><th>Tijd</th><th>Instroom</th><th>Uitstroom</th><th>Netto</th><th>Werkelijk</th><th>Tussentijd</th><th></th></tr></thead>
           <tbody id="spoelen-list"></tbody>
         </table>
       </div>
-    </div>
-  </div>
-
-  <div id="overzicht" class="tab-content">
-    <div class="date-selector">
-      <label>Datum:</label>
-      <input type="date" id="overzicht-datum">
-      <button onclick="app.loadOverzicht()">Vernieuwen</button>
-    </div>
-    <h2 style="margin-bottom: 1rem;">Dag totalen</h2>
-    <div class="summary-grid" id="totals-grid"></div>
-    <div class="card">
-      <h2 style="margin-bottom: 1rem;">Spoelmomenten</h2>
-      <div id="spoelen-overzicht"></div>
-    </div>
-    <div class="card">
-      <h2 style="margin-bottom: 1rem;">Eet/Drink momenten</h2>
-      <div id="eetdrink-overzicht"></div>
     </div>
   </div>
 
@@ -250,8 +248,18 @@
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbx7o27pkaZq1Ei4BBbU6eDmdUGfLfIETuWQKEQ40YWrqKo5Cq41-oq5UiNIU5LsyWVBeA/exec';
+const ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+const ICON_DELETE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+function rowActions(editCall, deleteCall) {
+  return `<td class="row-actions"><button class="icon-btn edit" title="Wijzigen" onclick="${editCall}">${ICON_EDIT}</button><button class="icon-btn delete" title="Verwijderen" onclick="${deleteCall}">${ICON_DELETE}</button></td>`;
+}
 const app = {
   data: { favorieten: [], instellingen: {}, spoelen: {}, eetdrink: {} },
+  spoelenData: [],
+  eetdrinkData: [],
+  editSpoelRowIndex: null,
+  editEetDrinkRowIndex: null,
+  editFavRowIndex: null,
   init() {
     this.setupTabs();
     this.setupDates();
@@ -267,7 +275,6 @@ const app = {
         document.getElementById(tab).classList.add('active');
         if (tab === 'eetdrink') this.loadEetDrink();
         if (tab === 'spoelen') this.loadSpoelen();
-        if (tab === 'overzicht') this.loadOverzicht();
         if (tab === 'analyse') this.setupAnalyseDates();
       });
     });
@@ -276,11 +283,9 @@ const app = {
     const today = this.getToday();
     document.getElementById('spoelen-datum').value = today;
     document.getElementById('eetdrink-datum').value = today;
-    document.getElementById('overzicht-datum').value = today;
     
     document.getElementById('eetdrink-datum').addEventListener('change', () => this.loadEetDrink());
     document.getElementById('spoelen-datum').addEventListener('change', () => this.loadSpoelen());
-    document.getElementById('overzicht-datum').addEventListener('change', () => this.loadOverzicht());
     
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -335,33 +340,68 @@ const app = {
   },
   async addFavoriet() {
     const item = document.getElementById('fav-item').value;
+    const categorie = document.getElementById('fav-categorie').value || '';
     const eiwit_g = parseInt(document.getElementById('fav-eiwit').value) || 0;
     const kcal = parseInt(document.getElementById('fav-kcal').value) || 0;
     const vocht_ml = parseInt(document.getElementById('fav-vocht').value) || 0;
-    const categorie = document.getElementById('fav-categorie').value || '';
-    if (!item) { alert('Vul itemnaam in'); return; }
-    this.data.favorieten.push({ item, eiwit_g, kcal, vocht_ml, categorie });
+    if (!item) { alert('Vul een naam in'); return; }
+    try {
+      if (this.editFavRowIndex !== null) {
+        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_favoriet', rowIndex: this.editFavRowIndex, item, eiwit_g, kcal, vocht_ml, categorie }) });
+        this.showSync('Favoriet gewijzigd');
+      } else {
+        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add_favoriet', item, eiwit_g, kcal, vocht_ml, categorie }) });
+        this.showSync('Favoriet toegevoegd');
+      }
+      this.cancelEditFavoriet();
+      await this.reloadFavorieten();
+    } catch (e) { alert('Fout: ' + e); }
+  },
+  editFavoriet(rowIndex) {
+    const fav = this.data.favorieten.find(x => x.rowIndex === rowIndex);
+    if (!fav) return;
+    document.getElementById('fav-item').value = fav.item;
+    document.getElementById('fav-categorie').value = fav.categorie;
+    document.getElementById('fav-eiwit').value = fav.eiwit_g;
+    document.getElementById('fav-kcal').value = fav.kcal;
+    document.getElementById('fav-vocht').value = fav.vocht_ml;
+    this.editFavRowIndex = rowIndex;
+    document.getElementById('fav-submit').textContent = 'Wijziging opslaan';
+    document.getElementById('fav-cancel').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+  cancelEditFavoriet() {
+    this.editFavRowIndex = null;
     document.getElementById('fav-item').value = '';
+    document.getElementById('fav-categorie').value = '';
     document.getElementById('fav-eiwit').value = '0';
     document.getElementById('fav-kcal').value = '0';
     document.getElementById('fav-vocht').value = '0';
-    document.getElementById('fav-categorie').value = '';
-    this.updateFavorieten();
-    this.showSync('Favoriet toegevoegd');
+    document.getElementById('fav-submit').textContent = 'Favoriet toevoegen';
+    document.getElementById('fav-cancel').style.display = 'none';
+  },
+  async reloadFavorieten() {
+    try {
+      const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_favorieten' }) });
+      this.data.favorieten = (await resp.json()).favorieten || [];
+      this.updateFavorieten();
+    } catch (e) { console.error('Reload favorieten error:', e); }
   },
   loadFavorieten() {
     const tbody = document.getElementById('favorieten-list');
     tbody.innerHTML = '';
-    this.data.favorieten.forEach((fav, idx) => {
+    this.data.favorieten.forEach((fav) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${fav.item}</td><td>${fav.eiwit_g}</td><td>${fav.kcal}</td><td>${fav.vocht_ml}</td><td>${fav.categorie}</td><td><button class="danger" onclick="app.deleteFavoriet(${idx})">Verwijder</button></td>`;
+      tr.innerHTML = `<td>${fav.item}</td><td>${fav.categorie}</td><td>${fav.eiwit_g}</td><td>${fav.kcal}</td><td>${fav.vocht_ml}</td>` + rowActions(`app.editFavoriet(${fav.rowIndex})`, `app.deleteFavoriet(${fav.rowIndex})`);
       tbody.appendChild(tr);
     });
   },
-  deleteFavoriet(idx) {
+  async deleteFavoriet(rowIndex) {
     if (!confirm('Favoriet verwijderen?')) return;
-    this.data.favorieten.splice(idx, 1);
-    this.updateFavorieten();
+    try {
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_favoriet', rowIndex }) });
+      await this.reloadFavorieten();
+    } catch (e) { alert('Fout: ' + e); }
   },
   async addSpoel() {
     const datum = document.getElementById('spoelen-datum').value;
@@ -370,16 +410,36 @@ const app = {
     const uitstroom = parseInt(document.getElementById('spoelen-uitstroom').value) || 0;
     if (!datum || !tijdstip || instroom < 0 || uitstroom < 0) { alert('Vul alle velden in'); return; }
     try {
+      if (this.editSpoelRowIndex !== null) {
+        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_spoel', rowIndex: this.editSpoelRowIndex }) });
+      }
       const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add_spoel', datum, tijdstip, instroom, uitstroom }) });
       const result = await resp.json();
       if (result.status === 'success') {
-        this.showSync('Spoel moment opgeslagen');
-        document.getElementById('spoelen-instroom').value = '';
-        document.getElementById('spoelen-uitstroom').value = '';
-        document.getElementById('spoelen-tijdstip').value = '';
+        this.showSync(this.editSpoelRowIndex !== null ? 'Spoel moment gewijzigd' : 'Spoel moment opgeslagen');
+        this.cancelEditSpoel();
         this.loadSpoelen();
       }
     } catch (e) { alert('Fout bij opslaan: ' + e); }
+  },
+  editSpoel(rowIndex) {
+    const s = this.spoelenData.find(x => x.rowIndex === rowIndex);
+    if (!s) return;
+    document.getElementById('spoelen-tijdstip').value = s.tijdstip;
+    document.getElementById('spoelen-instroom').value = s.instroom;
+    document.getElementById('spoelen-uitstroom').value = s.uitstroom;
+    this.editSpoelRowIndex = rowIndex;
+    document.getElementById('spoelen-submit').textContent = 'Wijziging opslaan';
+    document.getElementById('spoelen-cancel').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+  cancelEditSpoel() {
+    this.editSpoelRowIndex = null;
+    document.getElementById('spoelen-tijdstip').value = '';
+    document.getElementById('spoelen-instroom').value = '';
+    document.getElementById('spoelen-uitstroom').value = '';
+    document.getElementById('spoelen-submit').textContent = 'Spoel moment toevoegen';
+    document.getElementById('spoelen-cancel').style.display = 'none';
   },
   async addEetDrink() {
     const datum = document.getElementById('eetdrink-datum').value;
@@ -394,18 +454,41 @@ const app = {
     const vocht_ml = parseInt(document.getElementById('eetdrink-vocht').value) || 0;
     if (!datum || !tijdstip || !item) { alert('Vul datum, tijdstip en item in'); return; }
     try {
+      if (this.editEetDrinkRowIndex !== null) {
+        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_eetdrink', rowIndex: this.editEetDrinkRowIndex }) });
+      }
       const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add_eetdrink', datum, tijdstip, item, eiwit_g, kcal, vocht_ml }) });
       const result = await resp.json();
       if (result.status === 'success') {
-        this.showSync('Moment opgeslagen');
-        document.getElementById('eetdrink-item-vrij').value = '';
-        document.getElementById('eetdrink-item-select').value = '';
-        document.getElementById('eetdrink-eiwit').value = '0';
-        document.getElementById('eetdrink-kcal').value = '0';
-        document.getElementById('eetdrink-vocht').value = '0';
+        this.showSync(this.editEetDrinkRowIndex !== null ? 'Moment gewijzigd' : 'Moment opgeslagen');
+        this.cancelEditEetDrink();
         this.loadEetDrink();
       }
     } catch (e) { alert('Fout: ' + e); }
+  },
+  editEetDrink(rowIndex) {
+    const e = this.eetdrinkData.find(x => x.rowIndex === rowIndex);
+    if (!e) return;
+    document.getElementById('eetdrink-tijdstip').value = e.tijdstip;
+    document.getElementById('eetdrink-item-select').value = '';
+    document.getElementById('eetdrink-item-vrij').value = e.item;
+    document.getElementById('eetdrink-eiwit').value = e.eiwit_g;
+    document.getElementById('eetdrink-kcal').value = e.kcal;
+    document.getElementById('eetdrink-vocht').value = e.vocht_ml;
+    this.editEetDrinkRowIndex = rowIndex;
+    document.getElementById('eetdrink-submit').textContent = 'Wijziging opslaan';
+    document.getElementById('eetdrink-cancel').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+  cancelEditEetDrink() {
+    this.editEetDrinkRowIndex = null;
+    document.getElementById('eetdrink-item-vrij').value = '';
+    document.getElementById('eetdrink-item-select').value = '';
+    document.getElementById('eetdrink-eiwit').value = '0';
+    document.getElementById('eetdrink-kcal').value = '0';
+    document.getElementById('eetdrink-vocht').value = '0';
+    document.getElementById('eetdrink-submit').textContent = 'Moment toevoegen';
+    document.getElementById('eetdrink-cancel').style.display = 'none';
   },
   async loadSpoelen() {
     const datum = document.getElementById('spoelen-datum').value;
@@ -414,8 +497,10 @@ const app = {
       const result = await resp.json();
       let spoelen = result.spoelen || [];
       spoelen.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
+      this.spoelenData = spoelen;
       const tbody = document.getElementById('spoelen-list');
       tbody.innerHTML = '';
+      const tussentijden = [];
       spoelen.forEach((s, idx) => {
         let tussentijd = '';
         if (idx > 0) {
@@ -423,15 +508,32 @@ const app = {
           const prevTime = new Date(`2000-01-01 ${prev.tijdstip}`);
           const currTime = new Date(`2000-01-01 ${s.tijdstip}`);
           const diffMs = currTime - prevTime;
-          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-          const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-          tussentijd = `${String(diffHours).padStart(2, '0')}:${String(diffMinutes).padStart(2, '0')}`;
+          const diffMinutes = Math.round(diffMs / (1000 * 60));
+          tussentijden.push(diffMinutes);
+          const h = Math.floor(diffMinutes / 60);
+          const m = diffMinutes % 60;
+          tussentijd = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         }
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${s.tijdstip}</td><td>${s.instroom}</td><td>${s.uitstroom}</td><td>${Math.round(s.netto_uitstroom)}</td><td>${Math.round(s.werkelijke_uitstroom)}</td><td>${tussentijd}</td><td><button class="danger" onclick="app.deleteSpoelen(${s.rowIndex})">Verwijder</button></td>`;
+        tr.innerHTML = `<td>${s.tijdstip}</td><td>${s.instroom}</td><td>${s.uitstroom}</td><td>${Math.round(s.netto_uitstroom)}</td><td>${Math.round(s.werkelijke_uitstroom)}</td><td>${tussentijd}</td>` + rowActions(`app.editSpoel(${s.rowIndex})`, `app.deleteSpoel(${s.rowIndex})`);
         tbody.appendChild(tr);
       });
+      this.renderSpoelenTotals(spoelen, tussentijden);
     } catch (e) { console.error('Load spoelen error:', e); }
+  },
+  minutenNaarTijd(min) {
+    const h = Math.floor(min / 60);
+    const m = Math.round(min % 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  },
+  renderSpoelenTotals(spoelen, tussentijden) {
+    const aantal = spoelen.length;
+    const totaalWerkelijk = spoelen.reduce((sum, s) => sum + (s.werkelijke_uitstroom || 0), 0);
+    const gemWerkelijk = aantal > 0 ? totaalWerkelijk / aantal : 0;
+    const maxTussen = tussentijden.length > 0 ? Math.max(...tussentijden) : 0;
+    const gemTussen = tussentijden.length > 0 ? tussentijden.reduce((a, b) => a + b, 0) / tussentijden.length : 0;
+    const grid = document.getElementById('spoelen-totals');
+    grid.innerHTML = `<div class="summary-card"><div class="summary-label">Aantal keren spoelen</div><div class="summary-value">${aantal}</div></div><div class="summary-card"><div class="summary-label">Totale werkelijke uitstroom (ml)</div><div class="summary-value">${Math.round(totaalWerkelijk)}</div></div><div class="summary-card"><div class="summary-label">Gem. werkelijke uitstroom (ml)</div><div class="summary-value">${Math.round(gemWerkelijk)}</div></div><div class="summary-card"><div class="summary-label">Max. tussentijd (uu:mm)</div><div class="summary-value">${this.minutenNaarTijd(maxTussen)}</div></div><div class="summary-card"><div class="summary-label">Gem. tussentijd (uu:mm)</div><div class="summary-value">${this.minutenNaarTijd(gemTussen)}</div></div>`;
   },
   async deleteSpoel(rowIndex) {
     if (!confirm('Zeker?')) return;
@@ -447,11 +549,12 @@ const app = {
       const result = await resp.json();
       let eetdrink = result.eetdrink || [];
       eetdrink.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
+      this.eetdrinkData = eetdrink;
       const tbody = document.getElementById('eetdrink-list');
       tbody.innerHTML = '';
       eetdrink.forEach((e, idx) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${e.tijdstip}</td><td>${e.item}</td><td>${e.eiwit_g}</td><td>${e.kcal}</td><td>${e.vocht_ml}</td><td><button class="danger" onclick="app.deleteEetDrink(${e.rowIndex})">Verwijder</button></td>`;
+        tr.innerHTML = `<td>${e.tijdstip}</td><td>${e.item}</td><td>${e.eiwit_g}</td><td>${e.kcal}</td><td>${e.vocht_ml}</td>` + rowActions(`app.editEetDrink(${e.rowIndex})`, `app.deleteEetDrink(${e.rowIndex})`);
         tbody.appendChild(tr);
       });
       this.renderEetDrinkTotals(eetdrink);
@@ -470,45 +573,6 @@ const app = {
       await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_eetdrink', rowIndex }) });
       this.loadEetDrink();
     } catch (e) { alert('Fout: ' + e); }
-  },
-  async loadOverzicht() {
-    const datum = document.getElementById('overzicht-datum').value;
-    try {
-      const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum }) });
-      const result = await resp.json();
-      const spoelen = result.spoelen || [];
-      const eetdrink = result.eetdrink || [];
-      this.renderTotals(spoelen, eetdrink);
-      this.renderSpoelenoverzicht(spoelen);
-      this.renderEetDrinkoverzicht(eetdrink);
-    } catch (e) { console.error('Load overzicht error:', e); }
-  },
-  renderTotals(spoelen, eetdrink) {
-    const totalEiwit = eetdrink.reduce((sum, e) => sum + (e.eiwit_g || 0), 0);
-    const totalKcal = eetdrink.reduce((sum, e) => sum + (e.kcal || 0), 0);
-    const totalVocht = eetdrink.reduce((sum, e) => sum + (e.vocht_ml || 0), 0);
-    const avgUitstroom = spoelen.length > 0 ? spoelen.reduce((sum, s) => sum + s.uitstroom, 0) / spoelen.length : 0;
-    const avgNetto = spoelen.length > 0 ? spoelen.reduce((sum, s) => sum + (s.uitstroom - s.instroom), 0) / spoelen.length : 0;
-    const grid = document.getElementById('totals-grid');
-    grid.innerHTML = `<div class="summary-card"><div class="summary-label">Spoelmomenten</div><div class="summary-value">${spoelen.length}</div></div><div class="summary-card"><div class="summary-label">Gem. uitstroom (ml)</div><div class="summary-value">${Math.round(avgUitstroom)}</div></div><div class="summary-card"><div class="summary-label">Gem. netto (ml)</div><div class="summary-value">${Math.round(avgNetto)}</div></div><div class="summary-card"><div class="summary-label">Totaal eiwit (g)</div><div class="summary-value">${totalEiwit}</div></div><div class="summary-card"><div class="summary-label">Totaal kcal</div><div class="summary-value">${totalKcal}</div></div><div class="summary-card"><div class="summary-label">Totaal vocht (ml)</div><div class="summary-value">${totalVocht}</div></div>`;
-  },
-  renderSpoelenoverzicht(spoelen) {
-    let html = '';
-    if (spoelen.length === 0) { html = '<p style="color: #999;">Geen spoelmomenten vandaag</p>'; } else {
-      html = '<div class="timeline">';
-      spoelen.forEach(s => { html += `<div class="timeline-item"><div class="timeline-time">${s.tijdstip}</div><div class="timeline-detail">In: ${s.instroom} ml, Uit: ${s.uitstroom} ml, Netto: ${Math.round(s.netto_uitstroom)} ml</div></div>`; });
-      html += '</div>';
-    }
-    document.getElementById('spoelen-overzicht').innerHTML = html;
-  },
-  renderEetDrinkoverzicht(eetdrink) {
-    let html = '';
-    if (eetdrink.length === 0) { html = '<p style="color: #999;">Geen eet/drink momenten vandaag</p>'; } else {
-      html = '<div class="timeline">';
-      eetdrink.forEach(e => { html += `<div class="timeline-item eetdrink"><div class="timeline-time">${e.tijdstip}</div><div class="timeline-detail">${e.item} (E: ${e.eiwit_g}g, K: ${e.kcal}, V: ${e.vocht_ml}ml)</div></div>`; });
-      html += '</div>';
-    }
-    document.getElementById('eetdrink-overzicht').innerHTML = html;
   },
   async loadAnalyse() {
     const van = document.getElementById('analyse-van').value;
