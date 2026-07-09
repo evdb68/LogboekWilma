@@ -100,17 +100,21 @@
         <label>Of vrij item</label>
         <input type="text" id="eetdrink-item-vrij" placeholder="Eigen invoer">
       </div>
-      <div class="grid-2">
+      <div class="form-group" style="max-width: 120px;">
+        <label>Aantal</label>
+        <input type="number" id="eetdrink-aantal" min="1" step="1" value="1">
+      </div>
+      <div class="grid-3">
         <div class="form-group">
-          <label>Eiwit (g)</label>
+          <label>Eiwit (g) p/st</label>
           <input type="number" id="eetdrink-eiwit" min="0" value="0">
         </div>
         <div class="form-group">
-          <label>Kcal</label>
+          <label>Kcal p/st</label>
           <input type="number" id="eetdrink-kcal" min="0" value="0">
         </div>
         <div class="form-group">
-          <label>Vocht (ml)</label>
+          <label>Vocht (ml) p/st</label>
           <input type="number" id="eetdrink-vocht" min="0" value="0">
         </div>
       </div>
@@ -268,6 +272,16 @@ const app = {
   init() {
     this.setupTabs();
     this.setupDates();
+    document.getElementById('eetdrink-item-select').addEventListener('change', (e) => {
+      if (e.target.value) {
+        const fav = JSON.parse(e.target.value);
+        document.getElementById('eetdrink-eiwit').value = fav.eiwit_g;
+        document.getElementById('eetdrink-kcal').value = fav.kcal;
+        document.getElementById('eetdrink-vocht').value = fav.vocht_ml;
+        document.getElementById('eetdrink-item-vrij').value = '';
+        document.getElementById('eetdrink-aantal').value = '1';
+      }
+    });
     this.syncWithAPI();
   },
   setupTabs() {
@@ -331,15 +345,6 @@ const app = {
       opt.value = JSON.stringify(fav);
       opt.textContent = fav.item;
       select.appendChild(opt);
-    });
-    document.getElementById('eetdrink-item-select').addEventListener('change', (e) => {
-      if (e.target.value) {
-        const fav = JSON.parse(e.target.value);
-        document.getElementById('eetdrink-eiwit').value = fav.eiwit_g;
-        document.getElementById('eetdrink-kcal').value = fav.kcal;
-        document.getElementById('eetdrink-vocht').value = fav.vocht_ml;
-        document.getElementById('eetdrink-item-vrij').value = '';
-      }
     });
     this.loadFavorieten();
   },
@@ -454,15 +459,21 @@ const app = {
       const selected = JSON.parse(document.getElementById('eetdrink-item-select').value);
       item = selected.item;
     }
-    const eiwit_g = parseInt(document.getElementById('eetdrink-eiwit').value) || 0;
-    const kcal = parseInt(document.getElementById('eetdrink-kcal').value) || 0;
-    const vocht_ml = parseInt(document.getElementById('eetdrink-vocht').value) || 0;
+    const aantal = parseInt(document.getElementById('eetdrink-aantal').value) || 1;
+    const eiwitPer = parseInt(document.getElementById('eetdrink-eiwit').value) || 0;
+    const kcalPer = parseInt(document.getElementById('eetdrink-kcal').value) || 0;
+    const vochtPer = parseInt(document.getElementById('eetdrink-vocht').value) || 0;
     if (!datum || !tijdstip || !item) { alert('Vul datum, tijdstip en item in'); return; }
+    // Totalen voor dit eetmoment = aantal x waarde per stuk
+    const eiwit_g = eiwitPer * aantal;
+    const kcal = kcalPer * aantal;
+    const vocht_ml = vochtPer * aantal;
+    const itemNaam = aantal > 1 ? `${aantal}x ${item}` : item;
     try {
       if (this.editEetDrinkRowIndex !== null) {
         await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_eetdrink', rowIndex: this.editEetDrinkRowIndex }) });
       }
-      const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add_eetdrink', datum, tijdstip, item, eiwit_g, kcal, vocht_ml }) });
+      const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add_eetdrink', datum, tijdstip, item: itemNaam, eiwit_g, kcal, vocht_ml }) });
       const result = await resp.json();
       if (result.status === 'success') {
         this.showSync(this.editEetDrinkRowIndex !== null ? 'Moment gewijzigd' : 'Moment opgeslagen');
@@ -477,6 +488,7 @@ const app = {
     document.getElementById('eetdrink-tijdstip').value = e.tijdstip;
     document.getElementById('eetdrink-item-select').value = '';
     document.getElementById('eetdrink-item-vrij').value = e.item;
+    document.getElementById('eetdrink-aantal').value = 1;
     document.getElementById('eetdrink-eiwit').value = e.eiwit_g;
     document.getElementById('eetdrink-kcal').value = e.kcal;
     document.getElementById('eetdrink-vocht').value = e.vocht_ml;
@@ -489,6 +501,7 @@ const app = {
     this.editEetDrinkRowIndex = null;
     document.getElementById('eetdrink-item-vrij').value = '';
     document.getElementById('eetdrink-item-select').value = '';
+    document.getElementById('eetdrink-aantal').value = '1';
     document.getElementById('eetdrink-eiwit').value = '0';
     document.getElementById('eetdrink-kcal').value = '0';
     document.getElementById('eetdrink-vocht').value = '0';
