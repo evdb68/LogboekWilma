@@ -49,6 +49,10 @@
     .invoer-inline { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1rem; }
     .invoer-inline .form-group { margin-bottom: 0; }
     .invoer-inline input { width: 120px; }
+    .heatmap { border-collapse: collapse; width: 100%; font-size: 13px; }
+    .heatmap th { background: none; padding: 0.4rem 0.5rem; text-align: center; font-weight: 600; color: #555; border: none; }
+    .heatmap td.daglabel { text-align: right; padding: 0.2rem 0.6rem; color: #666; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .heatmap td.cel { text-align: center; padding: 0.5rem; border: 2px solid white; border-radius: 6px; font-weight: 600; min-width: 44px; }
     .chart-container { position: relative; height: 300px; margin-bottom: 2rem; }
     .date-selector { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
     .date-selector label { margin: 0; margin-left: 0.5rem; }
@@ -71,6 +75,7 @@
     <button class="tab-btn active" data-tab="eetdrink">Eten/Drinken</button>
     <button class="tab-btn" data-tab="favorieten">Favorieten</button>
     <button class="tab-btn" data-tab="spoelen">Spoelen</button>
+    <button class="tab-btn" data-tab="grafieken">Grafieken</button>
     <button class="tab-btn" data-tab="analyse">Analyse</button>
   </div>
 
@@ -102,7 +107,7 @@
       </div>
       <div class="form-group" style="max-width: 120px;">
         <label>Aantal</label>
-        <input type="number" id="eetdrink-aantal" min="1" step="1" value="1">
+        <input type="number" id="eetdrink-aantal" min="0.5" step="0.5" value="1">
       </div>
       <div class="grid-3">
         <div class="form-group">
@@ -213,6 +218,19 @@
     </div>
   </div>
 
+  <div id="grafieken" class="tab-content">
+    <div class="card">
+      <h2 style="margin-bottom: 0.5rem;">Gemiddelde tussentijd per dag</h2>
+      <p style="font-size: 13px; color: #666; margin-bottom: 1rem;">Vandaag en de 14 dagen daarvoor (uu:mm). Lijn = maximale tussentijd.</p>
+      <div style="position: relative; width: 100%;"><canvas id="chart-tussentijd"></canvas></div>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom: 0.5rem;">Verdeling spoelingen over de dag</h2>
+      <p style="font-size: 13px; color: #666; margin-bottom: 1rem;">Aantal spoelingen per dagdeel. Donkerder = meer.</p>
+      <div class="table-scroll" id="heatmap-spoelingen"></div>
+    </div>
+  </div>
+
   <div id="analyse" class="tab-content">
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Selecteer datumbereik</h2>
@@ -269,6 +287,7 @@ const app = {
   editSpoelRowIndex: null,
   editEetDrinkRowIndex: null,
   editFavRowIndex: null,
+  tussentijdChart: null,
   init() {
     this.setupTabs();
     this.setupDates();
@@ -294,6 +313,7 @@ const app = {
         document.getElementById(tab).classList.add('active');
         if (tab === 'eetdrink') this.loadEetDrink();
         if (tab === 'spoelen') this.loadSpoelen();
+        if (tab === 'grafieken') this.loadGrafieken();
         if (tab === 'analyse') this.setupAnalyseDates();
       });
     });
@@ -459,16 +479,17 @@ const app = {
       const selected = JSON.parse(document.getElementById('eetdrink-item-select').value);
       item = selected.item;
     }
-    const aantal = parseInt(document.getElementById('eetdrink-aantal').value) || 1;
+    const aantal = parseFloat(document.getElementById('eetdrink-aantal').value) || 1;
     const eiwitPer = parseInt(document.getElementById('eetdrink-eiwit').value) || 0;
     const kcalPer = parseInt(document.getElementById('eetdrink-kcal').value) || 0;
     const vochtPer = parseInt(document.getElementById('eetdrink-vocht').value) || 0;
     if (!datum || !tijdstip || !item) { alert('Vul datum, tijdstip en item in'); return; }
-    // Totalen voor dit eetmoment = aantal x waarde per stuk
-    const eiwit_g = eiwitPer * aantal;
-    const kcal = kcalPer * aantal;
-    const vocht_ml = vochtPer * aantal;
-    const itemNaam = aantal > 1 ? `${aantal}x ${item}` : item;
+    // Totalen voor dit eetmoment = aantal x waarde per stuk, afgerond op gehele getallen
+    const eiwit_g = Math.round(eiwitPer * aantal);
+    const kcal = Math.round(kcalPer * aantal);
+    const vocht_ml = Math.round(vochtPer * aantal);
+    const aantalLabel = String(aantal).replace('.', ',');
+    const itemNaam = aantal !== 1 ? `${aantalLabel}x ${item}` : item;
     try {
       if (this.editEetDrinkRowIndex !== null) {
         await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_eetdrink', rowIndex: this.editEetDrinkRowIndex }) });
@@ -660,6 +681,152 @@ const app = {
     const grid = document.getElementById('analyse-gemiddelden');
     grid.innerHTML = `<div class="summary-card"><div class="summary-label">Spoelmomenten/dag</div><div class="summary-value">${avgStats.spoelen}</div></div><div class="summary-card"><div class="summary-label">Gem. uitstroom</div><div class="summary-value">${avgStats.uitstroom}</div></div><div class="summary-card"><div class="summary-label">Gem. netto</div><div class="summary-value">${avgStats.netto}</div></div><div class="summary-card"><div class="summary-label">Gem. eiwit (g)</div><div class="summary-value">${avgStats.eiwit}</div></div><div class="summary-card"><div class="summary-label">Gem. kcal</div><div class="summary-value">${avgStats.kcal}</div></div><div class="summary-card"><div class="summary-label">Gem. vocht (ml)</div><div class="summary-value">${avgStats.vocht}</div></div>`;
     this.createCharts(dates, stats);
+  },
+  async loadGrafieken() {
+    // Datums: vandaag en 14 dagen terug (15 dagen), plus 1 extra dag ervoor voor de eerste tussentijd
+    const today = this.getToday();
+    const dates = [];
+    for (let i = 14; i >= 0; i--) {
+      const d = new Date(`${today}T00:00:00`);
+      d.setDate(d.getDate() - i);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      dates.push(`${y}-${m}-${day}`);
+    }
+    const extraDag = this.datumMinusEen(dates[0]);
+    const alleDatums = [extraDag, ...dates];
+
+    // Spoelen per dag ophalen
+    const perDag = {};
+    for (const datum of alleDatums) {
+      try {
+        const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum }) });
+        const result = await resp.json();
+        let sp = result.spoelen || [];
+        sp.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
+        perDag[datum] = sp;
+      } catch (e) { perDag[datum] = []; }
+    }
+
+    // Begin bij de eerste dag met waarnemingen (lege begindagen weglaten)
+    const eersteMetData = dates.findIndex(d => (perDag[d] || []).length > 0);
+    const zichtbareDatums = eersteMetData >= 0 ? dates.slice(eersteMetData) : dates;
+
+    // Gemiddelde en maximale tussentijd per dag (minuten), inclusief eerste tussentijd t.o.v. vorige dag
+    const gemPerDag = [];
+    const maxPerDag = [];
+    zichtbareDatums.forEach(datum => {
+      const sp = perDag[datum] || [];
+      const vorige = perDag[this.datumMinusEen(datum)] || [];
+      const tussentijden = [];
+      sp.forEach((s, idx) => {
+        let prev = null;
+        if (idx > 0) {
+          prev = { datum: datum, tijdstip: sp[idx - 1].tijdstip };
+        } else if (vorige.length > 0) {
+          prev = { datum: this.datumMinusEen(datum), tijdstip: vorige[vorige.length - 1].tijdstip };
+        }
+        if (prev) {
+          const prevDT = new Date(`${prev.datum}T${prev.tijdstip}`);
+          const currDT = new Date(`${datum}T${s.tijdstip}`);
+          tussentijden.push(Math.round((currDT - prevDT) / (1000 * 60)));
+        }
+      });
+      if (tussentijden.length > 0) {
+        gemPerDag.push(Math.round(tussentijden.reduce((a, b) => a + b, 0) / tussentijden.length));
+        maxPerDag.push(Math.max(...tussentijden));
+      } else {
+        gemPerDag.push(null);
+        maxPerDag.push(null);
+      }
+    });
+
+    const labels = zichtbareDatums.map(d => { const p = d.split('-'); return `${p[2]}-${p[1]}`; });
+    this.renderTussentijdChart(labels, gemPerDag, maxPerDag);
+    this.renderHeatmap(zichtbareDatums, perDag);
+  },
+  renderHeatmap(dates, perDag) {
+    // Dagdelen: naam + urenbereik [start, eind)
+    const dagdelen = [
+      { naam: 'Ochtend', start: 6, eind: 12 },
+      { naam: 'Middag', start: 12, eind: 18 },
+      { naam: 'Avond', start: 18, eind: 24 },
+      { naam: 'Nacht', start: 0, eind: 6 }
+    ];
+    // Tel spoelingen per dag per dagdeel
+    const rijen = dates.map(datum => {
+      const sp = perDag[datum] || [];
+      const counts = dagdelen.map(dd => sp.filter(s => {
+        const uur = parseInt(String(s.tijdstip).split(':')[0], 10);
+        return uur >= dd.start && uur < dd.eind;
+      }).length);
+      return { datum, counts };
+    });
+    // Maximum voor kleurschaal
+    let maxCount = 0;
+    rijen.forEach(r => r.counts.forEach(c => { if (c > maxCount) maxCount = c; }));
+
+    let html = '<table class="heatmap"><thead><tr><th></th>';
+    dagdelen.forEach(dd => {
+      const van = String(dd.start).padStart(2, '0');
+      const tot = String(dd.eind === 24 ? 24 : dd.eind).padStart(2, '0');
+      html += `<th>${dd.naam}<br><span style="font-size:11px; color:#999; font-weight:400;">${van}-${tot} u</span></th>`;
+    });
+    html += '</tr></thead><tbody>';
+    rijen.forEach(r => {
+      const p = r.datum.split('-');
+      html += `<tr><td class="daglabel">${p[2]}-${p[1]}</td>`;
+      r.counts.forEach(c => {
+        const kleur = this.heatmapKleur(c, maxCount);
+        const tekstKleur = (maxCount > 0 && c / maxCount > 0.6) ? '#fff' : (c === 0 ? '#d1d5db' : '#7a1f4f');
+        html += `<td class="cel" style="background:${kleur}; color:${tekstKleur};">${c}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('heatmap-spoelingen').innerHTML = html;
+  },
+  heatmapKleur(count, maxCount) {
+    if (count === 0 || maxCount === 0) return '#f8f9fa';
+    const t = count / maxCount; // 0..1
+    // Interpoleer van licht rose naar diep rose
+    const start = { r: 252, g: 231, b: 243 }; // #fce7f3
+    const eind = { r: 190, g: 24, b: 93 };    // #be185d
+    const r = Math.round(start.r + (eind.r - start.r) * t);
+    const g = Math.round(start.g + (eind.g - start.g) * t);
+    const b = Math.round(start.b + (eind.b - start.b) * t);
+    return `rgb(${r}, ${g}, ${b})`;
+  },
+  renderTussentijdChart(labels, gemPerDag, maxPerDag) {
+    if (this.tussentijdChart) { this.tussentijdChart.destroy(); }
+    const self = this;
+    this.tussentijdChart = new Chart(document.getElementById('chart-tussentijd'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Gemiddelde tussentijd', type: 'bar', data: gemPerDag, backgroundColor: '#ec4899', borderRadius: 4, order: 2 },
+          { label: 'Maximale tussentijd', type: 'line', data: maxPerDag, borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, spanGaps: false, pointRadius: 3, order: 1 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 3,
+        spanGaps: false,
+        plugins: {
+          legend: { display: true, position: 'bottom' },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ` + self.minutenNaarTijd(ctx.parsed.y) } }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { callback: (v) => self.minutenNaarTijd(v) }
+          }
+        }
+      }
+    });
   },
   createCharts(dates, stats) {
     const labels = dates;
