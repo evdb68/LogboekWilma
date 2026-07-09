@@ -12,7 +12,7 @@
     h1 { font-size: 24px; margin-bottom: 1.5rem; }
     .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
     .tab-btn { padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-size: 14px; border-bottom: 3px solid transparent; color: #666; transition: all 0.2s; }
-    .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+    .tab-btn.active { color: #ec4899; border-bottom-color: #ec4899; }
     .tab-btn:hover { color: #333; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
@@ -20,9 +20,9 @@
     .form-group { margin-bottom: 1rem; }
     label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; }
     input, select, textarea { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-    button { background: #2563eb; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s; }
-    button:hover { background: #1d4ed8; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #ec4899; box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1); }
+    button { background: #ec4899; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s; }
+    button:hover { background: #db2777; }
     button.danger { background: #dc2626; }
     button.danger:hover { background: #b91c1c; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -35,14 +35,15 @@
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .summary-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; }
     .summary-label { font-size: 12px; color: #999; margin-bottom: 0.5rem; }
-    .summary-value { font-size: 24px; font-weight: 600; color: #2563eb; }
+    .summary-value { font-size: 24px; font-weight: 600; color: #ec4899; }
     .chart-container { position: relative; height: 300px; margin-bottom: 2rem; }
-    .date-selector { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.5rem; }
-    .date-selector input { flex: 1; max-width: 200px; }
-    .date-selector button { padding: 0.5rem 1rem; }
+    .date-selector { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .date-selector label { margin: 0; margin-left: 0.5rem; }
+    .date-selector input { flex: 0 0 auto; max-width: 150px; }
+    .date-selector button { padding: 0.5rem 1rem; margin-left: auto; }
     .timeline { position: relative; padding: 1rem 0 1rem 2.5rem; }
     .timeline-item { margin-bottom: 1.5rem; position: relative; }
-    .timeline-item::before { content: ''; position: absolute; left: -2rem; top: 0.25rem; width: 12px; height: 12px; background: #2563eb; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 1px #ddd; }
+    .timeline-item::before { content: ''; position: absolute; left: -2rem; top: 0.25rem; width: 12px; height: 12px; background: #ec4899; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 1px #ddd; }
     .timeline-item.eetdrink::before { background: #059669; }
     .timeline-time { font-weight: 600; font-size: 14px; color: #333; }
     .timeline-detail { font-size: 13px; color: #666; margin-top: 0.25rem; }
@@ -54,53 +55,23 @@
 <div class="container">
   <h1>LogboekWilma</h1>
   <div class="tabs">
-    <button class="tab-btn active" data-tab="spoelen">Spoelen</button>
-    <button class="tab-btn" data-tab="eetdrink">Eten/Drinken</button>
+    <button class="tab-btn active" data-tab="eetdrink">Eten/Drinken</button>
+    <button class="tab-btn" data-tab="favorieten">Favorieten</button>
+    <button class="tab-btn" data-tab="spoelen">Spoelen</button>
     <button class="tab-btn" data-tab="overzicht">Dag-overzicht</button>
     <button class="tab-btn" data-tab="analyse">Analyse</button>
   </div>
 
-  <div id="spoelen" class="tab-content active">
-    <div class="date-selector">
-      <label>Datum:</label>
-      <input type="date" id="spoelen-datum">
-      <button onclick="app.loadSpoelen()">Vernieuwen</button>
-    </div>
-    <div class="card">
-      <h2 style="margin-bottom: 1rem;">Spoel moment toevoegen</h2>
-      <div class="grid-2">
-        <div class="form-group">
-          <label>Tijdstip</label>
-          <input type="time" id="spoelen-tijdstip">
-        </div>
-        <div class="form-group">
-          <label>Instroom (ml)</label>
-          <input type="number" id="spoelen-instroom" min="0">
-        </div>
-        <div class="form-group">
-          <label>Uitstroom (ml)</label>
-          <input type="number" id="spoelen-uitstroom" min="0">
-        </div>
-      </div>
-      <button onclick="app.addSpoel()">Spoel moment toevoegen</button>
-    </div>
-    <div class="card">
-      <h2 style="margin-bottom: 1rem;">Spoelmomenten vandaag</h2>
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th>Tijd</th><th>Instroom</th><th>Uitstroom</th><th>Netto</th><th>Werkelijk</th><th></th></tr></thead>
-          <tbody id="spoelen-list"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div id="eetdrink" class="tab-content">
+  <div id="eetdrink" class="tab-content active">
     <div class="date-selector">
       <label>Datum:</label>
       <input type="date" id="eetdrink-datum">
       <button onclick="app.loadEetDrink()">Vernieuwen</button>
     </div>
+
+    <h2 style="margin-bottom: 1rem;">Dagtotaal</h2>
+    <div class="summary-grid" id="eetdrink-totals"></div>
+
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Eet/Drink moment toevoegen</h2>
       <div class="form-group">
@@ -133,12 +104,85 @@
       </div>
       <button onclick="app.addEetDrink()">Moment toevoegen</button>
     </div>
+
     <div class="card">
-      <h2 style="margin-bottom: 1rem;">Eet/Drink momenten vandaag</h2>
+      <h2 style="margin-bottom: 1rem;">Details gesorteerd op tijdstip</h2>
       <div class="table-scroll">
         <table>
           <thead><tr><th>Tijd</th><th>Item</th><th>Eiwit</th><th>Kcal</th><th>Vocht</th><th></th></tr></thead>
           <tbody id="eetdrink-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="favorieten" class="tab-content">
+    <div class="card">
+      <h2 style="margin-bottom: 1rem;">Favorieten toevoegen/bewerken</h2>
+      <div class="form-group">
+        <label>Item naam</label>
+        <input type="text" id="fav-item" placeholder="Bijv. kopje thee">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Eiwit (g)</label>
+          <input type="number" id="fav-eiwit" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label>Kcal</label>
+          <input type="number" id="fav-kcal" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label>Vocht (ml)</label>
+          <input type="number" id="fav-vocht" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label>Categorie</label>
+          <input type="text" id="fav-categorie" placeholder="Bijv. drinken">
+        </div>
+      </div>
+      <button onclick="app.addFavoriet()">Favoriet toevoegen</button>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom: 1rem;">Mijn favorieten</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Item</th><th>Eiwit</th><th>Kcal</th><th>Vocht</th><th>Categorie</th><th></th></tr></thead>
+          <tbody id="favorieten-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="spoelen" class="tab-content">
+    <div class="date-selector">
+      <label>Datum:</label>
+      <input type="date" id="spoelen-datum">
+      <label>Tijdstip:</label>
+      <input type="time" id="spoelen-tijdstip">
+      <button onclick="app.loadSpoelen()">Vernieuwen</button>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom: 1rem;">Spoel moment toevoegen</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Instroom (ml)</label>
+          <input type="number" id="spoelen-instroom" min="0">
+        </div>
+        <div class="form-group">
+          <label>Uitstroom (ml)</label>
+          <input type="number" id="spoelen-uitstroom" min="0">
+        </div>
+      </div>
+      <button onclick="app.addSpoel()">Spoel moment toevoegen</button>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom: 1rem;">Spoelmomenten vandaag</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Tijd</th><th>Instroom</th><th>Uitstroom</th><th>Netto</th><th>Werkelijk</th><th></th></tr></thead>
+          <tbody id="spoelen-list"></tbody>
         </table>
       </div>
     </div>
@@ -277,6 +321,37 @@ const app = {
         document.getElementById('eetdrink-item-vrij').value = '';
       }
     });
+    this.loadFavorieten();
+  },
+  async addFavoriet() {
+    const item = document.getElementById('fav-item').value;
+    const eiwit_g = parseInt(document.getElementById('fav-eiwit').value) || 0;
+    const kcal = parseInt(document.getElementById('fav-kcal').value) || 0;
+    const vocht_ml = parseInt(document.getElementById('fav-vocht').value) || 0;
+    const categorie = document.getElementById('fav-categorie').value || '';
+    if (!item) { alert('Vul itemnaam in'); return; }
+    this.data.favorieten.push({ item, eiwit_g, kcal, vocht_ml, categorie });
+    document.getElementById('fav-item').value = '';
+    document.getElementById('fav-eiwit').value = '0';
+    document.getElementById('fav-kcal').value = '0';
+    document.getElementById('fav-vocht').value = '0';
+    document.getElementById('fav-categorie').value = '';
+    this.updateFavorieten();
+    this.showSync('Favoriet toegevoegd');
+  },
+  loadFavorieten() {
+    const tbody = document.getElementById('favorieten-list');
+    tbody.innerHTML = '';
+    this.data.favorieten.forEach((fav, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${fav.item}</td><td>${fav.eiwit_g}</td><td>${fav.kcal}</td><td>${fav.vocht_ml}</td><td>${fav.categorie}</td><td><button class="danger" onclick="app.deleteFavoriet(${idx})">Verwijder</button></td>`;
+      tbody.appendChild(tr);
+    });
+  },
+  deleteFavoriet(idx) {
+    if (!confirm('Favoriet verwijderen?')) return;
+    this.data.favorieten.splice(idx, 1);
+    this.updateFavorieten();
   },
   async addSpoel() {
     const datum = document.getElementById('spoelen-datum').value;
@@ -315,7 +390,6 @@ const app = {
         this.showSync('Moment opgeslagen');
         document.getElementById('eetdrink-item-vrij').value = '';
         document.getElementById('eetdrink-item-select').value = '';
-        document.getElementById('eetdrink-tijdstip').value = '';
         document.getElementById('eetdrink-eiwit').value = '0';
         document.getElementById('eetdrink-kcal').value = '0';
         document.getElementById('eetdrink-vocht').value = '0';
@@ -350,7 +424,8 @@ const app = {
     try {
       const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum }) });
       const result = await resp.json();
-      const eetdrink = result.eetdrink || [];
+      let eetdrink = result.eetdrink || [];
+      eetdrink.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
       const tbody = document.getElementById('eetdrink-list');
       tbody.innerHTML = '';
       eetdrink.forEach((e, idx) => {
@@ -358,7 +433,15 @@ const app = {
         tr.innerHTML = `<td>${e.tijdstip}</td><td>${e.item}</td><td>${e.eiwit_g}</td><td>${e.kcal}</td><td>${e.vocht_ml}</td><td><button class="danger" onclick="app.deleteEetDrink(${e.rowIndex})">Verwijder</button></td>`;
         tbody.appendChild(tr);
       });
+      this.renderEetDrinkTotals(eetdrink);
     } catch (e) { console.error('Load eetdrink error:', e); }
+  },
+  renderEetDrinkTotals(eetdrink) {
+    const totalEiwit = eetdrink.reduce((sum, e) => sum + (e.eiwit_g || 0), 0);
+    const totalKcal = eetdrink.reduce((sum, e) => sum + (e.kcal || 0), 0);
+    const totalVocht = eetdrink.reduce((sum, e) => sum + (e.vocht_ml || 0), 0);
+    const grid = document.getElementById('eetdrink-totals');
+    grid.innerHTML = `<div class="summary-card"><div class="summary-label">Totaal eiwit (g)</div><div class="summary-value">${totalEiwit}</div></div><div class="summary-card"><div class="summary-label">Totaal kcal</div><div class="summary-value">${totalKcal}</div></div><div class="summary-card"><div class="summary-label">Totaal vocht (ml)</div><div class="summary-value">${totalVocht}</div></div>`;
   },
   async deleteEetDrink(rowIndex) {
     if (!confirm('Zeker?')) return;
