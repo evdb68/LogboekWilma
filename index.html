@@ -53,6 +53,14 @@
     .heatmap th { background: none; padding: 0.4rem 0.5rem; text-align: center; font-weight: 600; color: #555; border: none; }
     .heatmap td.daglabel { text-align: right; padding: 0.2rem 0.6rem; color: #666; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .heatmap td.cel { text-align: center; padding: 0.5rem; border: 2px solid white; border-radius: 6px; font-weight: 600; min-width: 44px; }
+    .heatmap td.cel.totaal { background: #f3f4f6; color: #333; font-weight: 700; }
+    .tl-as { position: relative; height: 18px; border-bottom: 1px solid #e5e7eb; }
+    .tl-as span { position: absolute; top: 0; transform: translateX(-50%); font-size: 11px; color: #999; }
+    .tl-rij { display: flex; align-items: center; margin: 0.5rem 0; }
+    .tl-label { width: 48px; font-size: 12px; color: #666; text-align: right; padding-right: 10px; white-space: nowrap; }
+    .tl-track { position: relative; flex: 1; height: 20px; background: #f8f9fa; border-radius: 4px; min-width: 260px; }
+    .tl-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: #eef0f2; }
+    .tl-dot { position: absolute; top: 50%; width: 12px; height: 12px; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 0 1px #ddd; }
     .chart-container { position: relative; height: 300px; margin-bottom: 2rem; }
     .date-selector { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
     .date-selector label { margin: 0; margin-left: 0.5rem; }
@@ -236,6 +244,14 @@
       <div style="position: relative; width: 100%;"><canvas id="chart-eiwit-dag"></canvas></div>
     </div>
     <div class="card">
+      <h2 style="margin-bottom: 0.5rem;">Dagtijdlijn: eten en spoelen</h2>
+      <p style="font-size: 13px; color: #666; margin-bottom: 1rem;">
+        <span style="display:inline-flex; align-items:center; gap:0.4rem; margin-right:1rem;"><span style="width:12px;height:12px;background:#10b981;border-radius:50%;display:inline-block;"></span>Eetmoment</span>
+        <span style="display:inline-flex; align-items:center; gap:0.4rem;"><span style="width:12px;height:12px;background:#ec4899;border-radius:50%;display:inline-block;"></span>Spoeling</span>
+      </p>
+      <div class="table-scroll" id="tijdlijn-spoelen"></div>
+    </div>
+    <div class="card">
       <h2 style="margin-bottom: 0.5rem;">Verdeling spoelingen over de dag</h2>
       <p style="font-size: 13px; color: #666; margin-bottom: 1rem;">Aantal spoelingen per dagdeel. Donkerder = meer.</p>
       <div class="table-scroll" id="heatmap-spoelingen"></div>
@@ -264,10 +280,6 @@
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Spoel-intervallen</h2>
       <div class="chart-container"><canvas id="chart-intervallen"></canvas></div>
-    </div>
-    <div class="card">
-      <h2 style="margin-bottom: 1rem;">Eiwit per dag</h2>
-      <div class="chart-container"><canvas id="chart-eiwit"></canvas></div>
     </div>
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Vocht per dag</h2>
@@ -792,7 +804,39 @@ const app = {
     const labels = zichtbareDatums.map(d => { const p = d.split('-'); return `${p[2]}-${p[1]}`; });
     this.renderTussentijdChart(labels, gemPerDag, maxPerDag, minPerDag);
     this.renderEiwitDagChart(labels, eiwitPerDag);
+    this.renderTijdlijn(zichtbareDatums, perDag, perDagEet);
     this.renderHeatmap(zichtbareDatums, perDag);
+  },
+  renderTijdlijn(dates, perDag, perDagEet) {
+    const START = 0, EIND = 1440, SPAN = 1440; // volledige dag 00:00-24:00
+    const pct = (min) => ((min - START) / SPAN * 100);
+    const t2m = (t) => { const p = String(t).split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10); };
+
+    // Tijdas met uurlabels (elke 4 uur)
+    let as = '<div class="tl-rij"><div class="tl-label"></div><div class="tl-as">';
+    for (let u = 0; u <= 24; u += 4) {
+      as += `<span style="left:${pct(u * 60)}%;">${String(u).padStart(2, '0')}:00</span>`;
+    }
+    as += '</div></div>';
+
+    let html = as;
+    dates.forEach(datum => {
+      const eten = (perDagEet[datum] || []);
+      const spoel = (perDag[datum] || []);
+      const p = datum.split('-');
+      let track = '';
+      for (let u = 0; u <= 24; u += 4) {
+        track += `<div class="tl-grid" style="left:${pct(u * 60)}%;"></div>`;
+      }
+      eten.forEach(e => {
+        track += `<div class="tl-dot" title="Eten ${e.tijdstip} - ${e.item}" style="left:${pct(t2m(e.tijdstip))}%; background:#10b981;"></div>`;
+      });
+      spoel.forEach(s => {
+        track += `<div class="tl-dot" title="Spoelen ${s.tijdstip}" style="left:${pct(t2m(s.tijdstip))}%; background:#ec4899;"></div>`;
+      });
+      html += `<div class="tl-rij"><div class="tl-label">${p[2]}-${p[1]}</div><div class="tl-track">${track}</div></div>`;
+    });
+    document.getElementById('tijdlijn-spoelen').innerHTML = html;
   },
   renderHeatmap(dates, perDag) {
     // Dagdelen: naam + urenbereik [start, eind)
@@ -821,6 +865,7 @@ const app = {
       const tot = String(dd.eind === 24 ? 24 : dd.eind).padStart(2, '0');
       html += `<th>${dd.naam}<br><span style="font-size:11px; color:#999; font-weight:400;">${van}-${tot} u</span></th>`;
     });
+    html += '<th>Totaal</th>';
     html += '</tr></thead><tbody>';
     rijen.forEach(r => {
       const p = r.datum.split('-');
@@ -830,6 +875,8 @@ const app = {
         const tekstKleur = (maxCount > 0 && c / maxCount > 0.6) ? '#fff' : (c === 0 ? '#d1d5db' : '#7a1f4f');
         html += `<td class="cel" style="background:${kleur}; color:${tekstKleur};">${c}</td>`;
       });
+      const totaal = r.counts.reduce((a, b) => a + b, 0);
+      html += `<td class="cel totaal">${totaal}</td>`;
       html += '</tr>';
     });
     html += '</tbody></table>';
@@ -902,12 +949,10 @@ const app = {
   createCharts(dates, stats) {
     const labels = dates;
     const uitstroom = labels.map(d => Math.round(stats[d].gem_uitstroom));
-    const eiwit = labels.map(d => stats[d].eiwit);
     const vocht = labels.map(d => stats[d].vocht);
     const netto = labels.map(d => Math.round(stats[d].gem_netto));
     const options = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
     new Chart(document.getElementById('chart-intervallen'), { type: 'bar', data: { labels, datasets: [{ label: 'Netto uitstroom', data: netto, backgroundColor: '#3b82f6', borderRadius: 4 }] }, options });
-    new Chart(document.getElementById('chart-eiwit'), { type: 'bar', data: { labels, datasets: [{ label: 'Eiwit (g)', data: eiwit, backgroundColor: '#10b981', borderRadius: 4 }] }, options });
     new Chart(document.getElementById('chart-vocht'), { type: 'bar', data: { labels, datasets: [{ label: 'Vocht (ml)', data: vocht, backgroundColor: '#8b5cf6', borderRadius: 4 }] }, options });
     new Chart(document.getElementById('chart-uitstroom'), { type: 'line', data: { labels, datasets: [{ label: 'Gem. uitstroom (ml)', data: uitstroom, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.4, fill: true }] }, options });
   }
