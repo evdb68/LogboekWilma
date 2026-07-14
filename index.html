@@ -113,9 +113,18 @@
         <label>Of vrij item</label>
         <input type="text" id="eetdrink-item-vrij" placeholder="Eigen invoer">
       </div>
-      <div class="form-group" style="max-width: 120px;">
-        <label>Aantal</label>
-        <input type="number" id="eetdrink-aantal" min="0.5" step="0.5" value="1">
+      <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <div class="form-group" style="max-width: 160px;">
+          <label>Categorie</label>
+          <select id="eetdrink-categorie">
+            <option value="eten">Eten</option>
+            <option value="drinken">Drinken</option>
+          </select>
+        </div>
+        <div class="form-group" style="max-width: 120px;">
+          <label>Aantal</label>
+          <input type="number" id="eetdrink-aantal" min="0.5" step="0.5" value="1">
+        </div>
       </div>
       <div class="grid-3">
         <div class="form-group">
@@ -245,8 +254,8 @@
     </div>
     <div class="card">
       <h2 style="margin-bottom: 0.5rem;">Dagtijdlijn: eten en spoelen</h2>
-      <p style="font-size: 13px; color: #666; margin-bottom: 1rem;">
-        <span style="display:inline-flex; align-items:center; gap:0.4rem; margin-right:1rem;"><span style="width:12px;height:12px;background:#10b981;border-radius:50%;display:inline-block;"></span>Eetmoment</span>
+      <p style="font-size: 13px; color: #666; margin-bottom: 1rem;">Alleen eetmomenten (geen drinken).
+        <span style="display:inline-flex; align-items:center; gap:0.4rem; margin-left:0.5rem; margin-right:1rem;"><span style="width:12px;height:12px;background:#10b981;border-radius:50%;display:inline-block;"></span>Eten</span>
         <span style="display:inline-flex; align-items:center; gap:0.4rem;"><span style="width:12px;height:12px;background:#ec4899;border-radius:50%;display:inline-block;"></span>Spoeling</span>
       </p>
       <div class="table-scroll" id="tijdlijn-spoelen"></div>
@@ -323,9 +332,13 @@ const app = {
         document.getElementById('eetdrink-vocht').value = fav.vocht_ml;
         document.getElementById('eetdrink-item-vrij').value = '';
         document.getElementById('eetdrink-aantal').value = '1';
+        document.getElementById('eetdrink-categorie').value = this.normaliseerCategorie(fav.categorie);
       }
     });
     this.syncWithAPI();
+  },
+  normaliseerCategorie(cat) {
+    return String(cat || '').toLowerCase().includes('drink') ? 'drinken' : 'eten';
   },
   setupTabs() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -532,11 +545,12 @@ const app = {
     const vocht_ml = Math.round(vochtPer * aantal);
     const aantalLabel = String(aantal).replace('.', ',');
     const itemNaam = aantal !== 1 ? `${aantalLabel}x ${item}` : item;
+    const categorie = document.getElementById('eetdrink-categorie').value || 'eten';
     try {
       if (this.editEetDrinkRowIndex !== null) {
         await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_eetdrink', rowIndex: this.editEetDrinkRowIndex }) });
       }
-      const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add_eetdrink', datum, tijdstip, item: itemNaam, eiwit_g, kcal, vocht_ml }) });
+      const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add_eetdrink', datum, tijdstip, item: itemNaam, eiwit_g, kcal, vocht_ml, categorie }) });
       const result = await resp.json();
       if (result.status === 'success') {
         this.showSync(this.editEetDrinkRowIndex !== null ? 'Moment gewijzigd' : 'Moment opgeslagen');
@@ -555,6 +569,7 @@ const app = {
     document.getElementById('eetdrink-eiwit').value = e.eiwit_g;
     document.getElementById('eetdrink-kcal').value = e.kcal;
     document.getElementById('eetdrink-vocht').value = e.vocht_ml;
+    document.getElementById('eetdrink-categorie').value = this.normaliseerCategorie(e.categorie);
     this.editEetDrinkRowIndex = rowIndex;
     document.getElementById('eetdrink-submit').textContent = 'Wijziging opslaan';
     document.getElementById('eetdrink-cancel').style.display = '';
@@ -568,6 +583,7 @@ const app = {
     document.getElementById('eetdrink-eiwit').value = '0';
     document.getElementById('eetdrink-kcal').value = '0';
     document.getElementById('eetdrink-vocht').value = '0';
+    document.getElementById('eetdrink-categorie').value = 'eten';
     document.getElementById('eetdrink-submit').textContent = 'Moment toevoegen';
     document.getElementById('eetdrink-cancel').style.display = 'none';
   },
@@ -821,7 +837,9 @@ const app = {
 
     let html = as;
     dates.forEach(datum => {
-      const eten = (perDagEet[datum] || []);
+      const alleEet = (perDagEet[datum] || []);
+      // Alleen eten tonen; categorie afleiden uit favorieten als die niet is opgeslagen
+      const eten = alleEet.filter(e => this.effectieveCategorie(e) === 'eten');
       const spoel = (perDag[datum] || []);
       const p = datum.split('-');
       let track = '';
@@ -837,6 +855,14 @@ const app = {
       html += `<div class="tl-rij"><div class="tl-label">${p[2]}-${p[1]}</div><div class="tl-track">${track}</div></div>`;
     });
     document.getElementById('tijdlijn-spoelen').innerHTML = html;
+  },
+  effectieveCategorie(e) {
+    if (e.categorie) return this.normaliseerCategorie(e.categorie);
+    // Fallback: naam (zonder "Nx " prefix) opzoeken in favorieten
+    let naam = String(e.item || '').replace(/^\s*\d+([.,]\d+)?x\s+/i, '').trim().toLowerCase();
+    const fav = (this.data.favorieten || []).find(f => String(f.item || '').trim().toLowerCase() === naam);
+    if (fav) return this.normaliseerCategorie(fav.categorie);
+    return 'eten'; // onbekend: standaard als eten tonen
   },
   renderHeatmap(dates, perDag) {
     // Dagdelen: naam + urenbereik [start, eind)
