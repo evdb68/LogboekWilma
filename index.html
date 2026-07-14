@@ -148,7 +148,7 @@
       <h2 style="margin-bottom: 1rem;">Details gesorteerd op tijdstip</h2>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Tijd</th><th>Item</th><th>Eiwit</th><th>Kcal</th><th>Vocht</th><th></th></tr></thead>
+          <thead><tr><th>Tijd</th><th>Item</th><th>Categorie</th><th>Eiwit</th><th>Kcal</th><th>Vocht</th><th></th></tr></thead>
           <tbody id="eetdrink-list"></tbody>
         </table>
       </div>
@@ -676,7 +676,9 @@ const app = {
       tbody.innerHTML = '';
       eetdrink.forEach((e, idx) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${e.tijdstip}</td><td>${e.item}</td><td>${e.eiwit_g}</td><td>${e.kcal}</td><td>${e.vocht_ml}</td>` + rowActions(`app.editEetDrink(${e.rowIndex})`, `app.deleteEetDrink(${e.rowIndex})`);
+        const cat = this.effectieveCategorie(e);
+        const catLabel = cat.charAt(0).toUpperCase() + cat.slice(1);
+        tr.innerHTML = `<td>${e.tijdstip}</td><td>${e.item}</td><td>${catLabel}</td><td>${e.eiwit_g}</td><td>${e.kcal}</td><td>${e.vocht_ml}</td>` + rowActions(`app.editEetDrink(${e.rowIndex})`, `app.deleteEetDrink(${e.rowIndex})`);
         tbody.appendChild(tr);
       });
       this.renderEetDrinkTotals(eetdrink);
