@@ -242,6 +242,7 @@
       <input type="date" id="graf-begin" readonly>
       <label>Einddatum:</label>
       <input type="date" id="graf-eind">
+      <button onclick="app.loadGrafieken()">Vernieuwen</button>
     </div>
     <div class="card">
       <h2 style="margin-bottom: 0.5rem;">Tussentijd per dag</h2>
@@ -322,6 +323,7 @@ const app = {
   editFavRowIndex: null,
   tussentijdChart: null,
   eiwitDagChart: null,
+  grafiekenGeladen: false,
   init() {
     this.setupTabs();
     this.setupDates();
@@ -354,7 +356,13 @@ const app = {
         document.getElementById(tab).classList.add('active');
         if (tab === 'eetdrink') this.loadEetDrink();
         if (tab === 'spoelen') this.loadSpoelen();
-        if (tab === 'grafieken') { this.loadGrafieken(); if (this.tussentijdChart) requestAnimationFrame(() => { try { this.tussentijdChart.resize(); } catch (e) {} }); if (this.eiwitDagChart) requestAnimationFrame(() => { try { this.eiwitDagChart.resize(); } catch (e) {} }); }
+        if (tab === 'grafieken') {
+          if (!this.grafiekenGeladen) { this.loadGrafieken(); }
+          else {
+            if (this.tussentijdChart) requestAnimationFrame(() => { try { this.tussentijdChart.resize(); } catch (e) {} });
+            if (this.eiwitDagChart) requestAnimationFrame(() => { try { this.eiwitDagChart.resize(); } catch (e) {} });
+          }
+        }
         if (tab === 'analyse') this.setupAnalyseDates();
       });
     });
@@ -383,7 +391,6 @@ const app = {
 
     this.loadEetDrink();
     this.loadSpoelen();
-    this.loadGrafieken();
   },
   datumMinDagen(datum, dagen) {
     const d = new Date(`${datum}T00:00:00`);
@@ -765,19 +772,24 @@ const app = {
     const extraDag = this.datumMinusEen(dates[0]);
     const alleDatums = [extraDag, ...dates];
 
-    // Spoelen en eten/drinken per dag ophalen
+    // Laadindicatie
+    const tlEl = document.getElementById('tijdlijn-spoelen');
+    if (tlEl) tlEl.innerHTML = '<p style="color:#999;">Gegevens laden...</p>';
+
+    // Spoelen en eten/drinken per dag ophalen (parallel voor snelheid)
     const perDag = {};
     const perDagEet = {};
-    for (const datum of alleDatums) {
-      try {
-        const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum }) });
-        const result = await resp.json();
-        let sp = result.spoelen || [];
-        sp.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
-        perDag[datum] = sp;
-        perDagEet[datum] = result.eetdrink || [];
-      } catch (e) { perDag[datum] = []; perDagEet[datum] = []; }
-    }
+    const resultaten = await Promise.all(alleDatums.map(datum =>
+      fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum }) })
+        .then(r => r.json())
+        .then(result => ({ datum, spoelen: result.spoelen || [], eetdrink: result.eetdrink || [] }))
+        .catch(() => ({ datum, spoelen: [], eetdrink: [] }))
+    ));
+    resultaten.forEach(r => {
+      r.spoelen.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
+      perDag[r.datum] = r.spoelen;
+      perDagEet[r.datum] = r.eetdrink;
+    });
 
     // Begin bij de eerste dag met waarnemingen (spoelen of eten/drinken)
     const heeftData = (d) => (perDag[d] || []).length > 0 || (perDagEet[d] || []).length > 0;
@@ -828,6 +840,7 @@ const app = {
     this.renderEiwitDagChart(labels, eiwitPerDag);
     this.renderTijdlijn(zichtbareDatums, perDag, perDagEet);
     this.renderHeatmap(zichtbareDatums, perDag);
+    this.grafiekenGeladen = true;
   },
   renderTijdlijn(dates, perDag, perDagEet) {
     const START = 0, EIND = 1440, SPAN = 1440; // volledige dag 00:00-24:00
