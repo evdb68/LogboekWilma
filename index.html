@@ -99,47 +99,6 @@
     <button class="tab-btn" data-tab="analyse">Analyse</button>
   </div>
 
-  <div id="spoelen" class="tab-content active">
-    <div class="date-selector">
-      <label>Datum:</label>
-      <input type="date" id="spoelen-datum">
-      <button onclick="app.loadSpoelen()">Vernieuwen</button>
-    </div>
-
-    <h2 style="margin-bottom: 1rem;">Dagtotaal</h2>
-    <div class="summary-grid" id="spoelen-totals"></div>
-
-    <div class="card">
-      <h2 style="margin-bottom: 1rem;">Spoel moment toevoegen</h2>
-      <div class="invoer-inline">
-        <div class="form-group">
-          <label>Tijdstip</label>
-          <input type="time" id="spoelen-tijdstip">
-        </div>
-        <div class="form-group">
-          <label>Instroom (ml)</label>
-          <input type="number" id="spoelen-instroom" min="0">
-        </div>
-        <div class="form-group">
-          <label>Uitstroom (ml)</label>
-          <input type="number" id="spoelen-uitstroom" min="0">
-        </div>
-      </div>
-      <button id="spoelen-submit" onclick="app.addSpoel()">Spoel moment toevoegen</button>
-      <button id="spoelen-cancel" class="secondary" style="display:none;" onclick="app.cancelEditSpoel()">Annuleer</button>
-    </div>
-    <div class="card">
-      <h2 style="margin-bottom: 1rem;">Details gesorteerd op tijdstip</h2>
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th>Tijd</th><th>Instroom</th><th>Uitstroom</th><th>Netto</th><th>Werkelijk</th><th>Tussentijd</th><th></th></tr></thead>
-          <tbody id="spoelen-list"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div id="grafieken" class="tab-content">
   <div id="eetdrink" class="tab-content">
     <div class="date-selector">
       <label>Datum:</label>
@@ -219,7 +178,6 @@
   </div>
 
   <div id="favorieten" class="tab-content">
-  <div id="favorieten" class="tab-content">
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Favorieten toevoegen/bewerken</h2>
       <div class="form-group">
@@ -259,7 +217,46 @@
     </div>
   </div>
 
-  <div id="spoelen" class="tab-content">
+  <div id="spoelen" class="tab-content active">
+    <div class="date-selector">
+      <label>Datum:</label>
+      <input type="date" id="spoelen-datum">
+      <button onclick="app.loadSpoelen()">Vernieuwen</button>
+    </div>
+
+    <h2 style="margin-bottom: 1rem;">Dagtotaal</h2>
+    <div class="summary-grid" id="spoelen-totals"></div>
+
+    <div class="card">
+      <h2 style="margin-bottom: 1rem;">Spoel moment toevoegen</h2>
+      <div class="invoer-inline">
+        <div class="form-group">
+          <label>Tijdstip</label>
+          <input type="time" id="spoelen-tijdstip">
+        </div>
+        <div class="form-group">
+          <label>Instroom (ml)</label>
+          <input type="number" id="spoelen-instroom" min="0">
+        </div>
+        <div class="form-group">
+          <label>Uitstroom (ml)</label>
+          <input type="number" id="spoelen-uitstroom" min="0">
+        </div>
+      </div>
+      <button id="spoelen-submit" onclick="app.addSpoel()">Spoel moment toevoegen</button>
+      <button id="spoelen-cancel" class="secondary" style="display:none;" onclick="app.cancelEditSpoel()">Annuleer</button>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom: 1rem;">Details gesorteerd op tijdstip</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Tijd</th><th>Instroom</th><th>Uitstroom</th><th>Netto</th><th>Werkelijk</th><th>Tussentijd</th><th></th></tr></thead>
+          <tbody id="spoelen-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div id="grafieken" class="tab-content">
     <div class="date-selector">
       <label>Begindatum:</label>
@@ -293,7 +290,6 @@
     </div>
   </div>
 
-  <div id="analyse" class="tab-content">
   <div id="analyse" class="tab-content">
     <div class="card">
       <h2 style="margin-bottom: 1rem;">Selecteer datumbereik</h2>
@@ -352,17 +348,6 @@ const app = {
   init() {
     this.setupTabs();
     this.setupDates();
-    document.getElementById('eetdrink-item-select').addEventListener('change', (e) => {
-      if (e.target.value) {
-        const fav = JSON.parse(e.target.value);
-        document.getElementById('eetdrink-eiwit').value = fav.eiwit_g;
-        document.getElementById('eetdrink-kcal').value = fav.kcal;
-        document.getElementById('eetdrink-vocht').value = fav.vocht_ml;
-        document.getElementById('eetdrink-item-vrij').value = '';
-        document.getElementById('eetdrink-aantal').value = '1';
-        document.getElementById('eetdrink-categorie').value = this.normaliseerCategorie(fav.categorie);
-      }
-    });
     this.syncWithAPI();
   },
   normaliseerCategorie(cat) {
