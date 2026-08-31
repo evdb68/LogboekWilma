@@ -36,18 +36,6 @@
     .icon-btn.delete:hover { background: #fee2e2; border-color: #dc2626; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; max-width: 360px; }
-    .search-container { position: relative; margin-bottom: 0; }
-    .search-input { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-    .dropdown-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 6px 6px; max-height: 250px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .dropdown-list.active { display: block; }
-    .dropdown-item { padding: 0.75rem; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; font-size: 14px; }
-    .dropdown-item:hover { background: #f5f5f5; }
-    .dropdown-item.selected { background: #fce7f3; color: #ec4899; font-weight: 500; }
-    .highlight { background: #fef08a; font-weight: 600; }
-    .no-results { padding: 1rem; text-align: center; color: #999; font-size: 14px; }
-    .selected-item { padding: 0.5rem 0.75rem; background: #fce7f3; border-radius: 4px; color: #ec4899; font-weight: 500; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
-    .selected-item .clear-btn { cursor: pointer; font-size: 18px; line-height: 1; color: #ec4899; }
-    .selected-item .clear-btn:hover { color: #db2777; }
     @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
     .table-scroll { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -91,7 +79,6 @@
     .dropdown-list.active { display: block; }
     .dropdown-item { padding: 0.75rem; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; font-size: 14px; }
     .dropdown-item:hover { background: #f5f5f5; }
-    .dropdown-item.selected { background: #fce7f3; color: #ec4899; font-weight: 500; }
     .highlight { background: #fef08a; font-weight: 600; }
     .no-results { padding: 1rem; text-align: center; color: #999; font-size: 14px; }
     .selected-item { padding: 0.5rem 0.75rem; background: #fce7f3; border-radius: 4px; color: #ec4899; font-weight: 500; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
@@ -441,74 +428,7 @@ const app = {
       const favResp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_favorieten' }) });
       this.data.favorieten = (await favResp.json()).favorieten || [];
       const instResp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_instellingen' }) });
-      this.data.instellingen = (await instResp.json()).instellingen || {},
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+      this.data.instellingen = (await instResp.json()).instellingen || {};
       this.updateFavorieten();
     } catch (e) { console.error('API sync error:', e); }
   },
@@ -689,74 +609,7 @@ const app = {
         prevSpoelen.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
         if (prevSpoelen.length > 0) {
           const last = prevSpoelen[prevSpoelen.length - 1];
-          vorigeDagLaatste = { datum: vorigeDatum, tijdstip: last.tijdstip },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+          vorigeDagLaatste = { datum: vorigeDatum, tijdstip: last.tijdstip };
         }
       } catch (e) { /* vorige dag optioneel */ }
 
@@ -767,74 +620,7 @@ const app = {
         let tussentijd = '';
         let prevMoment = null;
         if (idx > 0) {
-          prevMoment = { datum: datum, tijdstip: spoelen[idx - 1].tijdstip },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+          prevMoment = { datum: datum, tijdstip: spoelen[idx - 1].tijdstip };
         } else if (vorigeDagLaatste) {
           prevMoment = vorigeDagLaatste;
         }
@@ -919,74 +705,7 @@ const app = {
     const van = document.getElementById('analyse-van').value;
     const tot = document.getElementById('analyse-tot').value;
     if (!van || !tot) { alert('Selecteer datumbereik'); return; }
-    const allData = {},
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+    const allData = {};
     const currentDate = new Date(van);
     const endDate = new Date(tot);
     while (currentDate <= endDate) {
@@ -994,74 +713,7 @@ const app = {
       try {
         const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum }) });
         const result = await resp.json();
-        allData[datum] = { spoelen: result.spoelen || [], eetdrink: result.eetdrink || [] },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+        allData[datum] = { spoelen: result.spoelen || [], eetdrink: result.eetdrink || [] };
       } catch (e) { console.error('Error loading', datum, e); }
       currentDate.setDate(currentDate.getDate() + 1);
     }
@@ -1069,74 +721,7 @@ const app = {
   },
   renderAnalyse(allData) {
     const dates = Object.keys(allData).sort();
-    const stats = {},
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+    const stats = {};
     dates.forEach(datum => {
       const { spoelen, eetdrink } = allData[datum];
       stats[datum] = {
@@ -1146,74 +731,7 @@ const app = {
         eiwit: eetdrink.reduce((s, x) => s + (x.eiwit_g || 0), 0),
         kcal: eetdrink.reduce((s, x) => s + (x.kcal || 0), 0),
         vocht: eetdrink.reduce((s, x) => s + (x.vocht_ml || 0), 0)
-      },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+      };
     });
     const avgStats = {
       spoelen: Math.round(Object.values(stats).reduce((s, x) => s + x.spoelen_count, 0) / dates.length),
@@ -1222,74 +740,7 @@ const app = {
       eiwit: Math.round(Object.values(stats).reduce((s, x) => s + x.eiwit, 0) / dates.length),
       kcal: Math.round(Object.values(stats).reduce((s, x) => s + x.kcal, 0) / dates.length),
       vocht: Math.round(Object.values(stats).reduce((s, x) => s + x.vocht, 0) / dates.length)
-    },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+    };
     const grid = document.getElementById('analyse-gemiddelden');
     grid.innerHTML = `<div class="summary-card"><div class="summary-label">Spoelmomenten/dag</div><div class="summary-value">${avgStats.spoelen}</div></div><div class="summary-card"><div class="summary-label">Gem. uitstroom</div><div class="summary-value">${avgStats.uitstroom}</div></div><div class="summary-card"><div class="summary-label">Gem. netto</div><div class="summary-value">${avgStats.netto}</div></div><div class="summary-card"><div class="summary-label">Gem. eiwit (g)</div><div class="summary-value">${avgStats.eiwit}</div></div><div class="summary-card"><div class="summary-label">Gem. kcal</div><div class="summary-value">${avgStats.kcal}</div></div><div class="summary-card"><div class="summary-label">Gem. vocht (ml)</div><div class="summary-value">${avgStats.vocht}</div></div>`;
     this.createCharts(dates, stats);
@@ -1318,142 +769,8 @@ const app = {
     if (tlEl) tlEl.innerHTML = '<p style="color:#999;">Gegevens laden...</p>';
 
     // Spoelen en eten/drinken per dag ophalen (parallel voor snelheid)
-    const perDag = {},
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
-    const perDagEet = {},
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+    const perDag = {};
+    const perDagEet = {};
     const resultaten = await Promise.all(alleDatums.map(datum =>
       fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum }) })
         .then(r => r.json())
@@ -1482,143 +799,9 @@ const app = {
       sp.forEach((s, idx) => {
         let prev = null;
         if (idx > 0) {
-          prev = { datum: datum, tijdstip: sp[idx - 1].tijdstip },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+          prev = { datum: datum, tijdstip: sp[idx - 1].tijdstip };
         } else if (vorige.length > 0) {
-          prev = { datum: this.datumMinusEen(datum), tijdstip: vorige[vorige.length - 1].tijdstip },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+          prev = { datum: this.datumMinusEen(datum), tijdstip: vorige[vorige.length - 1].tijdstip };
         }
         if (prev) {
           const prevDT = new Date(`${prev.datum}T${prev.tijdstip}`);
@@ -1654,74 +837,7 @@ const app = {
   renderTijdlijn(dates, perDag, perDagEet) {
     const START = 0, EIND = 1440, SPAN = 1440; // volledige dag 00:00-24:00
     const pct = (min) => ((min - START) / SPAN * 100);
-    const t2m = (t) => { const p = String(t).split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10); },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+    const t2m = (t) => { const p = String(t).split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10); };
 
     // Tijdas met uurlabels (elke 4 uur)
     let as = '<div class="tl-rij"><div class="tl-label"></div><div class="tl-as">';
@@ -1774,74 +890,7 @@ const app = {
         const uur = parseInt(String(s.tijdstip).split(':')[0], 10);
         return uur >= dd.start && uur < dd.eind;
       }).length);
-      return { datum, counts },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+      return { datum, counts };
     });
     // Maximum voor kleurschaal
     let maxCount = 0;
@@ -1861,141 +910,7 @@ const app = {
       r.counts.forEach(c => {
         const kleur = this.heatmapKleur(c, maxCount);
         const tekstKleur = (maxCount > 0 && c / maxCount > 0.6) ? '#fff' : (c === 0 ? '#d1d5db' : '#7a1f4f');
-        html += `<td class="cel" style="background:${kleur},
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-}; color:${tekstKleur},
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};">${c}</td>`;
+        html += `<td class="cel" style="background:${kleur}; color:${tekstKleur};">${c}</td>`;
       });
       const totaal = r.counts.reduce((a, b) => a + b, 0);
       html += `<td class="cel totaal">${totaal}</td>`;
@@ -2008,142 +923,8 @@ const app = {
     if (count === 0 || maxCount === 0) return '#f8f9fa';
     const t = count / maxCount; // 0..1
     // Interpoleer van licht rose naar diep rose
-    const start = { r: 252, g: 231, b: 243 },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-}; // #fce7f3
-    const eind = { r: 190, g: 24, b: 93 },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};    // #be185d
+    const start = { r: 252, g: 231, b: 243 }; // #fce7f3
+    const eind = { r: 190, g: 24, b: 93 };    // #be185d
     const r = Math.round(start.r + (eind.r - start.r) * t);
     const g = Math.round(start.g + (eind.g - start.g) * t);
     const b = Math.round(start.b + (eind.b - start.b) * t);
@@ -2207,79 +988,11 @@ const app = {
     const uitstroom = labels.map(d => Math.round(stats[d].gem_uitstroom));
     const vocht = labels.map(d => stats[d].vocht);
     const netto = labels.map(d => Math.round(stats[d].gem_netto));
-    const options = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
-  selectedFood: null,
-  filterItems() {
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    if (!zoekTerm) {
-      dropdown.innerHTML = '<div class="no-results">Begin met typen om te zoeken...</div>';
-      return;
-    }
-    const gefilterd = (this.data.favorieten || []).filter(item => 
-      item.item.toLowerCase().includes(zoekTerm)
-    );
-    if (gefilterd.length === 0) {
-      dropdown.innerHTML = '<div class="no-results">Geen resultaten gevonden</div>';
-      return;
-    }
-    dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-        ${this.highlightMatch(item.item, zoekTerm)}
-      </div>
-    `).join('');
-  },
-  highlightMatch(text, zoekTerm) {
-    const regex = new RegExp(`(${zoekTerm})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  },
-  showDropdown() {
-    const dropdown = document.getElementById('eetdrink-dropdown');
-    const zoekTerm = document.getElementById('eetdrink-item-zoek').value;
-    dropdown.classList.add('active');
-    if (!zoekTerm) {
-      const items = (this.data.favorieten || []).slice(0, 10);
-      dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
-          ${item.item}
-        </div>
-      `).join('');
-      if ((this.data.favorieten || []).length > 10) {
-        dropdown.innerHTML += '<div class="no-results">...en meer. Begin met typen.</div>';
-      }
-    } else {
-      this.filterItems();
-    }
-  },
-  selectFood(food, eiwit, kcal, vocht) {
-    this.selectedFood = food;
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-dropdown').classList.remove('active');
-    document.getElementById('eetdrink-eiwit').value = eiwit;
-    document.getElementById('eetdrink-kcal').value = kcal;
-    document.getElementById('eetdrink-vocht').value = vocht;
-    document.getElementById('eetdrink-selected').innerHTML = `
-      <div class="selected-item">
-        <span>${food}</span>
-        <span class="clear-btn" onclick="app.clearFood()">×</span>
-      </div>
-    `;
-  },
-  clearFood() {
-    this.selectedFood = null;
-    document.getElementById('eetdrink-selected').innerHTML = '';
-    document.getElementById('eetdrink-item-zoek').value = '';
-    document.getElementById('eetdrink-eiwit').value = '0';
-    document.getElementById('eetdrink-kcal').value = '0';
-    document.getElementById('eetdrink-vocht').value = '0';
-  }
-
-};
+    const options = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
     new Chart(document.getElementById('chart-intervallen'), { type: 'bar', data: { labels, datasets: [{ label: 'Netto uitstroom', data: netto, backgroundColor: '#3b82f6', borderRadius: 4 }] }, options });
     new Chart(document.getElementById('chart-vocht'), { type: 'bar', data: { labels, datasets: [{ label: 'Vocht (ml)', data: vocht, backgroundColor: '#8b5cf6', borderRadius: 4 }] }, options });
     new Chart(document.getElementById('chart-uitstroom'), { type: 'line', data: { labels, datasets: [{ label: 'Gem. uitstroom (ml)', data: uitstroom, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.4, fill: true }] }, options });
-  }
-},
+  },
   selectedFood: null,
   filterItems() {
     const zoekTerm = document.getElementById('eetdrink-item-zoek').value.toLowerCase().trim();
@@ -2345,8 +1058,6 @@ const app = {
     document.getElementById('eetdrink-kcal').value = '0';
     document.getElementById('eetdrink-vocht').value = '0';
   }
-
-};
 app.init();
 </script>
 </body>
