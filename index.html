@@ -571,12 +571,8 @@ const app = {
     const e = this.eetdrinkData.find(x => x.rowIndex === rowIndex);
     if (!e) return;
     document.getElementById('eetdrink-tijdstip').value = e.tijdstip;
-    this.selectFood(e.item, e.eiwit_g || 0, e.kcal || 0, e.vocht_ml || 0);
+    this.selectFood(e.item, e.eiwit_g || 0, e.kcal || 0, e.vocht_ml || 0, e.categorie);
     document.getElementById('eetdrink-aantal').value = 1;
-    document.getElementById('eetdrink-eiwit').value = e.eiwit_g;
-    document.getElementById('eetdrink-kcal').value = e.kcal;
-    document.getElementById('eetdrink-vocht').value = e.vocht_ml;
-    document.getElementById('eetdrink-categorie').value = this.normaliseerCategorie(e.categorie);
     this.editEetDrinkRowIndex = rowIndex;
     document.getElementById('eetdrink-submit').textContent = 'Wijziging opslaan';
     document.getElementById('eetdrink-cancel').style.display = '';
@@ -586,7 +582,6 @@ const app = {
     this.editEetDrinkRowIndex = null;
     this.clearFood();
     document.getElementById('eetdrink-aantal').value = '1';
-    document.getElementById('eetdrink-categorie').value = 'eten';
     document.getElementById('eetdrink-submit').textContent = 'Moment toevoegen';
     document.getElementById('eetdrink-cancel').style.display = 'none';
   },
@@ -1009,7 +1004,7 @@ const app = {
       return;
     }
     dropdown.innerHTML = gefilterd.map(item => `
-      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
+      <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0}, '${(item.categorie || '').replace(/'/g, "\\'")}')">
         ${this.highlightMatch(item.item, zoekTerm)}
       </div>
     `).join('');
@@ -1025,7 +1020,7 @@ const app = {
     if (!zoekTerm) {
       const items = (this.data.favorieten || []).slice(0, 10);
       dropdown.innerHTML = items.map(item => `
-        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0})">
+        <div class="dropdown-item" onclick="app.selectFood('${item.item.replace(/'/g, "\\'")}', ${item.eiwit_g || 0}, ${item.kcal || 0}, ${item.vocht_ml || 0}, '${(item.categorie || '').replace(/'/g, "\\'")}')">
           ${item.item}
         </div>
       `).join('');
@@ -1036,13 +1031,14 @@ const app = {
       this.filterItems();
     }
   },
-  selectFood(food, eiwit, kcal, vocht) {
+  selectFood(food, eiwit, kcal, vocht, categorie = 'eten') {
     this.selectedFood = food;
     document.getElementById('eetdrink-item-zoek').value = '';
     document.getElementById('eetdrink-dropdown').classList.remove('active');
     document.getElementById('eetdrink-eiwit').value = eiwit;
     document.getElementById('eetdrink-kcal').value = kcal;
     document.getElementById('eetdrink-vocht').value = vocht;
+    document.getElementById('eetdrink-categorie').value = this.normaliseerCategorie(categorie);
     document.getElementById('eetdrink-selected').innerHTML = `
       <div class="selected-item">
         <span>${food}</span>
@@ -1057,6 +1053,7 @@ const app = {
     document.getElementById('eetdrink-eiwit').value = '0';
     document.getElementById('eetdrink-kcal').value = '0';
     document.getElementById('eetdrink-vocht').value = '0';
+    document.getElementById('eetdrink-categorie').value = 'eten';
   }
 };
 app.init();
