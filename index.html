@@ -588,14 +588,26 @@ const app = {
   async loadSpoelen() {
     const datum = document.getElementById('spoelen-datum').value;
     try {
-      // Gebruik de nieuwe gecombineerde API call (veel sneller!)
-      const resp = await fetch(API_URL, { 
-        method: 'POST', 
-        body: JSON.stringify({ action: 'get_spoel_and_previous_day', datum }) 
-      });
+      // Terug naar originele API call voor testing
+      const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum }) });
       const result = await resp.json();
       let spoelen = result.spoelen || [];
-      const vorigeDagLaatste = result.vorigeDagLaatste;
+      spoelen.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
+      this.spoelenData = spoelen;
+
+      // Laatste spoelmoment van de voorgaande dag ophalen (voor tussentijd eerste waarde)
+      let vorigeDagLaatste = null;
+      const vorigeDatum = this.datumMinusEen(datum);
+      try {
+        const prevResp = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_data_for_date', datum: vorigeDatum }) });
+        const prevResult = await prevResp.json();
+        let prevSpoelen = prevResult.spoelen || [];
+        prevSpoelen.sort((a, b) => a.tijdstip.localeCompare(b.tijdstip));
+        if (prevSpoelen.length > 0) {
+          const last = prevSpoelen[prevSpoelen.length - 1];
+          vorigeDagLaatste = { datum: vorigeDatum, tijdstip: last.tijdstip };
+        }
+      } catch (e) { /* vorige dag optioneel */ }
 
       const tbody = document.getElementById('spoelen-list');
       tbody.innerHTML = '';
